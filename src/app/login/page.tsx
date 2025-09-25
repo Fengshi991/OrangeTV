@@ -6,13 +6,13 @@ import { AlertCircle, CheckCircle, Shield } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
+import MachineCode from '@/lib/machine-code';
 import { CURRENT_VERSION } from '@/lib/version';
 import { checkForUpdates, UpdateStatus } from '@/lib/version_check';
-import MachineCode from '@/lib/machine-code';
 
+import GlobalThemeLoader from '@/components/GlobalThemeLoader';
 import { useSite } from '@/components/SiteProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import GlobalThemeLoader from '@/components/GlobalThemeLoader';
 
 // 版本显示组件
 function VersionDisplay() {
@@ -77,6 +77,14 @@ function LoginPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [shouldAskUsername, setShouldAskUsername] = useState(false);
+
+  // ---------- 新增注册相关状态 ----------
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [regUsername, setRegUsername] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  const [regLoading, setRegLoading] = useState(false);
+  const [regError, setRegError] = useState<string | null>(null);
 
   // 机器码相关状态
   const [machineCode, setMachineCode] = useState<string>('');
@@ -192,7 +200,67 @@ function LoginPageClient() {
     }
   };
 
+  // ---------- 新增：注册处理 ----------
+  const handleRegister = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setRegError(null);
 
+    // 基本校验
+    const name = shouldAskUsername ? regUsername.trim() : '';
+    if (shouldAskUsername && !name) {
+      setRegError('用户名不能为空');
+      return;
+    }
+    if (!regPassword || regPassword.length < 6) {
+      setRegError('密码长度至少 6 位');
+      return;
+    }
+    if (regPassword !== regConfirmPassword) {
+      setRegError('两次输入的密码不一致');
+      return;
+    }
+
+    try {
+      setRegLoading(true);
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: name,
+          password: regPassword,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        // 注册成功后自动登录（调用已有 /api/login）
+        const loginRes = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: name,
+            password: regPassword,
+          }),
+        });
+        if (loginRes.ok) {
+          const redirect = searchParams.get('redirect') || '/';
+          router.replace(redirect);
+        } else {
+          // 登录失败时显示注册成功提示并提示手动登录
+          setRegError('注册成功，但自动登录失败，请手动登录');
+          setIsRegisterMode(false);
+        }
+      } else if (res.status === 409) {
+        setRegError(data.error || '用户名已存在');
+      } else {
+        setRegError(data.error || '注册失败，请稍后重试');
+      }
+    } catch (err) {
+      setRegError('网络错误，请稍后重试');
+    } finally {
+      setRegLoading(false);
+    }
+  };
 
   return (
     <div className='relative min-h-screen flex items-center justify-center px-4 overflow-hidden'>
@@ -204,7 +272,8 @@ function LoginPageClient() {
         <h1 className='text-blue-600 tracking-tight text-center text-3xl font-extrabold mb-8 bg-clip-text drop-shadow-sm'>
           {siteName}
         </h1>
-        <form onSubmit={handleSubmit} className='space-y-8'>
+        {/* 表单：登录 或 注册（受 isRegisterMode 控制） */}
+        <form onSubmit={isRegisterMode ? handleRegister : handleSubmit} className='space-y-8'>
           {shouldAskUsername && (
             <div className='relative'>
               <input
@@ -213,12 +282,12 @@ function LoginPageClient() {
                 autoComplete='username'
                 className='peer block w-full rounded-lg border-0 py-4 px-4 pt-6 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-white/60 dark:ring-white/20 focus:ring-2 focus:ring-blue-500 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur placeholder-transparent'
                 placeholder='用户名'
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={isRegisterMode ? regUsername : username}
+                onChange={(e) => isRegisterMode ? setRegUsername(e.target.value) : setUsername(e.target.value)}
               />
               <label
                 htmlFor='username'
-                className={`absolute left-4 transition-all duration-200 pointer-events-none ${username
+                className={`absolute left-4 transition-all duration-200 pointer-events-none ${(isRegisterMode ? regUsername : username)
                   ? 'top-1 text-xs text-blue-600 dark:text-blue-400'
                   : 'top-4 text-base text-gray-500 dark:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-blue-600 peer-focus:dark:text-blue-400'
                   }`}
@@ -232,15 +301,15 @@ function LoginPageClient() {
             <input
               id='password'
               type='password'
-              autoComplete='current-password'
+              autoComplete={isRegisterMode ? 'new-password' : 'current-password'}
               className='peer block w-full rounded-lg border-0 py-4 px-4 pt-6 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-white/60 dark:ring-white/20 focus:ring-2 focus:ring-blue-500 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur placeholder-transparent'
               placeholder='密码'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={isRegisterMode ? regPassword : password}
+              onChange={(e) => isRegisterMode ? setRegPassword(e.target.value) : setPassword(e.target.value)}
             />
             <label
               htmlFor='password'
-              className={`absolute left-4 transition-all duration-200 pointer-events-none ${password
+              className={`absolute left-4 transition-all duration-200 pointer-events-none ${(isRegisterMode ? regPassword : password)
                 ? 'top-1 text-xs text-blue-600 dark:text-blue-400'
                 : 'top-4 text-base text-gray-500 dark:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-blue-600 peer-focus:dark:text-blue-400'
                 }`}
@@ -249,7 +318,31 @@ function LoginPageClient() {
             </label>
           </div>
 
-          {/* 机器码信息显示 - 只有在启用设备码功能时才显示 */}
+          {/* 注册模式需要确认密码 */}
+          {isRegisterMode && (
+            <div className='relative'>
+              <input
+                id='confirmPassword'
+                type='password'
+                autoComplete='new-password'
+                className='peer block w-full rounded-lg border-0 py-4 px-4 pt-6 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-white/60 dark:ring-white/20 focus:ring-2 focus:ring-blue-500 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur placeholder-transparent'
+                placeholder='确认密码'
+                value={regConfirmPassword}
+                onChange={(e) => setRegConfirmPassword(e.target.value)}
+              />
+              <label
+                htmlFor='confirmPassword'
+                className={`absolute left-4 transition-all duration-200 pointer-events-none ${regConfirmPassword
+                  ? 'top-1 text-xs text-blue-600 dark:text-blue-400'
+                  : 'top-4 text-base text-gray-500 dark:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-blue-600 peer-focus:dark:text-blue-400'
+                  }`}
+              >
+                确认密码
+              </label>
+            </div>
+          )}
+
+          {/* 机器码信息显示 - 保持原有逻辑 */}
           {deviceCodeEnabled && machineCodeGenerated && shouldAskUsername && (
             <div className='space-y-4'>
               <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4'>
@@ -290,23 +383,44 @@ function LoginPageClient() {
             </div>
           )}
 
-          {error && (
+          {/* 错误提示 */}
+          {(error && !isRegisterMode) && (
             <p className='text-sm text-red-600 dark:text-red-400'>{error}</p>
           )}
+          {(regError && isRegisterMode) && (
+            <p className='text-sm text-red-600 dark:text-red-400'>{regError}</p>
+          )}
 
-          {/* 登录按钮 */}
-          <button
-            type='submit'
-            disabled={
-              !password ||
-              loading ||
-              (shouldAskUsername && !username) ||
-              (deviceCodeEnabled && machineCodeGenerated && shouldAskUsername && !requireMachineCode && !bindMachineCode)
-            }
-            className='inline-flex w-full justify-center rounded-lg bg-blue-600 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-blue-700 disabled:cursor-not-allowed disabled:opacity-50'
-          >
-            {loading ? '登录中...' : '登录'}
-          </button>
+          {/* 按钮区域：登录 或 注册 切换 */}
+          <div className='space-y-2'>
+            <button
+              type='submit'
+              disabled={
+                (isRegisterMode ? (!regPassword || (shouldAskUsername && !regUsername) || regLoading) : (!password || loading || (shouldAskUsername && !username) || (deviceCodeEnabled && machineCodeGenerated && shouldAskUsername && !requireMachineCode && !bindMachineCode)))
+              }
+              className='inline-flex w-full justify-center rounded-lg bg-blue-600 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-blue-700 disabled:cursor-not-allowed disabled:opacity-50'
+            >
+              {isRegisterMode ? (regLoading ? '注册中...' : '注册') : (loading ? '登录中...' : '登录')}
+            </button>
+
+            {/* 切换注册/登录 */}
+            {shouldAskUsername && (
+              <div className='flex items-center justify-center'>
+                <button
+                  type='button'
+                  onClick={() => {
+                    setIsRegisterMode(!isRegisterMode);
+                    // 清理错误状态
+                    setError(null);
+                    setRegError(null);
+                  }}
+                  className='text-sm text-blue-600 dark:text-blue-400 hover:underline'
+                >
+                  {isRegisterMode ? '已有账号？返回登录' : '没有账号？注册'}
+                </button>
+              </div>
+            )}
+          </div>
         </form>
       </div>
 
