@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/*eslint-disable @typescript-eslint/no-explicit-any */
 
 'use client';
 
@@ -37,7 +37,7 @@ function VersionDisplay() {
   return (
     <button
       onClick={() =>
-        window.open('https://github.com/djteang/OrangeTV', '_blank')
+        window.open('https://github.com/djteang/OrangeTV','_blank')
       }
       className='absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 transition-colors cursor-pointer'
     >
@@ -46,7 +46,7 @@ function VersionDisplay() {
         <div
           className={`flex items-center gap-1.5 ${updateStatus === UpdateStatus.HAS_UPDATE
             ? 'text-yellow-600 dark:text-yellow-400'
-            : updateStatus === UpdateStatus.NO_UPDATE
+            : updateStatus=== UpdateStatus.NO_UPDATE
               ? 'text-blue-600 dark:text-blue-400'
               : ''
             }`}
@@ -61,7 +61,7 @@ function VersionDisplay() {
             <>
               <CheckCircle className='w-3.5 h-3.5' />
               <span className='font-semibold text-xs'>已是最新</span>
-            </>
+           </>
           )}
         </div>
       )}
@@ -74,7 +74,7 @@ function LoginPageClient() {
   const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string| null>(null);
   const [loading, setLoading] = useState(false);
   const [shouldAskUsername, setShouldAskUsername] = useState(false);
 
@@ -86,12 +86,12 @@ function LoginPageClient() {
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState<string | null>(null);
 
-  // 机器码相关状态
+ // 机器码相关状态
   const [machineCode, setMachineCode] = useState<string>('');
   const [deviceInfo, setDeviceInfo] = useState<string>('');
   const [, setShowMachineCodeInput] = useState(false);
   const [requireMachineCode, setRequireMachineCode] = useState(false);
-  const [machineCodeGenerated, setMachineCodeGenerated] = useState(false);
+ const [machineCodeGenerated, setMachineCodeGenerated] = useState(false);
   const [, setShowBindOption] = useState(false);
   const [bindMachineCode, setBindMachineCode] = useState(false);
   const [deviceCodeEnabled, setDeviceCodeEnabled] = useState(true); // 站点是否启用设备码功能
@@ -108,8 +108,14 @@ function LoginPageClient() {
       setShouldAskUsername(storageType && storageType !== 'localstorage');
       setDeviceCodeEnabled(requireDeviceCode !== false); // 默认启用，除非明确设置为 false
 
+      //检查是否启用注册功能
+      const enableRegister = runtimeConfig?.ENABLE_REGISTER !== false; // 默认启用注册
+      if (!enableRegister) {
+        setIsRegisterMode(false);
+      }
+
       // 只有在启用设备码功能时才生成机器码和设备信息
-      const generateMachineInfo = async () => {
+      const generateMachineInfo= async () => {
         if (requireDeviceCode !== false && MachineCode.isSupported()) {
           try {
             const code = await MachineCode.generateMachineCode();
@@ -117,7 +123,7 @@ function LoginPageClient() {
             setMachineCode(code);
             setDeviceInfo(info);
             setMachineCodeGenerated(true);
-          } catch (error) {
+          } catch(error) {
             console.error('生成机器码失败:', error);
           }
         }
@@ -131,7 +137,7 @@ function LoginPageClient() {
     e.preventDefault();
     setError(null);
 
-    if (!password || (shouldAskUsername && !username)) return;
+    if (!password || (shouldAskUsername&& !username)) return;
 
     try {
       setLoading(true);
@@ -151,7 +157,7 @@ function LoginPageClient() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestData),
-      });
+});
 
       const data = await res.json().catch(() => ({}));
 
@@ -159,7 +165,7 @@ function LoginPageClient() {
         // 登录成功，如果启用设备码功能且用户选择绑定机器码，则绑定
         if (deviceCodeEnabled && bindMachineCode && machineCode && shouldAskUsername) {
           try {
-            await fetch('/api/machine-code', {
+await fetch('/api/machine-code', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -178,14 +184,14 @@ function LoginPageClient() {
         // 处理机器码相关错误
         if (data.requireMachineCode) {
           setRequireMachineCode(true);
-          setShowMachineCodeInput(true);
+         setShowMachineCodeInput(true);
           setError('该账户已绑定设备，请验证机器码');
         } else if (data.machineCodeMismatch) {
           setError('机器码不匹配，此账户只能在绑定的设备上使用');
         } else {
           setError(data.error || '访问被拒绝');
         }
-      } else if (res.status === 409) {
+     } else if (res.status === 409) {
         // 机器码被其他用户绑定
         setError(data.error || '机器码冲突');
       } else if (res.status === 401) {
@@ -205,6 +211,16 @@ function LoginPageClient() {
     if (e) e.preventDefault();
     setRegError(null);
 
+    //检查注册功能是否启用
+    if (typeof window !== 'undefined') {
+      const runtimeConfig = (window as any).RUNTIME_CONFIG;
+      const enableRegister = runtimeConfig?.ENABLE_REGISTER !== false;
+      if (!enableRegister) {
+        setRegError('注册功能已关闭');
+        return;
+}
+    }
+
     // 基本校验
     const name = shouldAskUsername ? regUsername.trim() : '';
     if (shouldAskUsername && !name) {
@@ -212,7 +228,7 @@ function LoginPageClient() {
       return;
     }
     if (!regPassword || regPassword.length < 6) {
-      setRegError('密码长度至少 6 位');
+setRegError('密码长度至少 6 位');
       return;
     }
     if (regPassword !== regConfirmPassword) {
@@ -222,7 +238,7 @@ function LoginPageClient() {
 
     try {
       setRegLoading(true);
-      const res = await fetch('/api/register', {
+      const res = await fetch('/api/register',{
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -242,7 +258,7 @@ function LoginPageClient() {
             password: regPassword,
           }),
         });
-        if (loginRes.ok) {
+if (loginRes.ok) {
           const redirect = searchParams.get('redirect') || '/';
           router.replace(redirect);
         } else {
@@ -262,9 +278,14 @@ function LoginPageClient() {
     }
   };
 
+  //检查注册功能是否启用
+  const isRegisterEnabled = typeof window !== 'undefined' 
+    ? (window as any).RUNTIME_CONFIG?.ENABLE_REGISTER !== false 
+    : true;
+
   return (
     <div className='relative min-h-screen flex items-center justify-center px-4 overflow-hidden'>
-      <GlobalThemeLoader />
+<GlobalThemeLoader />
       <div className='absolute top-4 right-4'>
         <ThemeToggle />
       </div>
@@ -280,14 +301,14 @@ function LoginPageClient() {
                 id='username'
                 type='text'
                 autoComplete='username'
-                className='peer block w-full rounded-lg border-0 py-4 px-4 pt-6 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-white/60 dark:ring-white/20 focus:ring-2 focus:ring-blue-500 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur placeholder-transparent'
+                className='peer block w-full rounded-lg border-0 py-4px-4 pt-6 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-white/60 dark:ring-white/20 focus:ring-2 focus:ring-blue-500 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur placeholder-transparent'
                 placeholder='用户名'
                 value={isRegisterMode ? regUsername : username}
                 onChange={(e) => isRegisterMode ? setRegUsername(e.target.value) : setUsername(e.target.value)}
               />
               <label
                 htmlFor='username'
-                className={`absolute left-4 transition-all duration-200 pointer-events-none ${(isRegisterMode ? regUsername : username)
+               className={`absolute left-4 transition-all duration-200 pointer-events-none ${(isRegisterMode ? regUsername : username)
                   ? 'top-1 text-xs text-blue-600 dark:text-blue-400'
                   : 'top-4 text-base text-gray-500 dark:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-blue-600 peer-focus:dark:text-blue-400'
                   }`}
@@ -303,7 +324,7 @@ function LoginPageClient() {
               type='password'
               autoComplete={isRegisterMode ? 'new-password' : 'current-password'}
               className='peer block w-full rounded-lg border-0 py-4 px-4 pt-6 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-white/60 dark:ring-white/20 focus:ring-2 focus:ring-blue-500 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur placeholder-transparent'
-              placeholder='密码'
+             placeholder='密码'
               value={isRegisterMode ? regPassword : password}
               onChange={(e) => isRegisterMode ? setRegPassword(e.target.value) : setPassword(e.target.value)}
             />
@@ -311,8 +332,8 @@ function LoginPageClient() {
               htmlFor='password'
               className={`absolute left-4 transition-all duration-200 pointer-events-none ${(isRegisterMode ? regPassword : password)
                 ? 'top-1 text-xs text-blue-600 dark:text-blue-400'
-                : 'top-4 text-base text-gray-500 dark:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-blue-600 peer-focus:dark:text-blue-400'
-                }`}
+                : 'top-4 text-base text-gray-500 dark:text-gray-400 peer-focus:top-1 peer-focus:text-xspeer-focus:text-blue-600 peer-focus:dark:text-blue-400'
+               }`}
             >
               密码
             </label>
@@ -325,7 +346,7 @@ function LoginPageClient() {
                 id='confirmPassword'
                 type='password'
                 autoComplete='new-password'
-                className='peer block w-full rounded-lg border-0 py-4 px-4 pt-6 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-white/60 dark:ring-white/20 focus:ring-2 focus:ring-blue-500 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur placeholder-transparent'
+                className='peerblock w-full rounded-lg border-0 py-4 px-4 pt-6 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-white/60 dark:ring-white/20 focus:ring-2 focus:ring-blue-500 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur placeholder-transparent'
                 placeholder='确认密码'
                 value={regConfirmPassword}
                 onChange={(e) => setRegConfirmPassword(e.target.value)}
@@ -333,11 +354,11 @@ function LoginPageClient() {
               <label
                 htmlFor='confirmPassword'
                 className={`absolute left-4 transition-all duration-200 pointer-events-none ${regConfirmPassword
-                  ? 'top-1 text-xs text-blue-600 dark:text-blue-400'
+                  ? 'top-1 text-xstext-blue-600 dark:text-blue-400'
                   : 'top-4 text-base text-gray-500 dark:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-blue-600 peer-focus:dark:text-blue-400'
-                  }`}
+                 }`}
               >
-                确认密码
+               确认密码
               </label>
             </div>
           )}
@@ -360,7 +381,7 @@ function LoginPageClient() {
                 </div>
               </div>
 
-              {/* 绑定选项 */}
+{/* 绑定选项 */}
               {!requireMachineCode && (
                 <div className='space-y-2'>
                   <div className='flex items-center space-x-3'>
@@ -368,7 +389,7 @@ function LoginPageClient() {
                       id='bindMachineCode'
                       type='checkbox'
                       checked={bindMachineCode}
-                      onChange={(e) => setBindMachineCode(e.target.checked)}
+                      onChange={(e)=> setBindMachineCode(e.target.checked)}
                       className='w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
                     />
                     <label htmlFor='bindMachineCode' className='text-sm text-gray-700 dark:text-gray-300'>
@@ -383,7 +404,7 @@ function LoginPageClient() {
             </div>
           )}
 
-          {/* 错误提示 */}
+          {/* 错误提示*/}
           {(error && !isRegisterMode) && (
             <p className='text-sm text-red-600 dark:text-red-400'>{error}</p>
           )}
@@ -400,11 +421,11 @@ function LoginPageClient() {
               }
               className='inline-flex w-full justify-center rounded-lg bg-blue-600 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-blue-700 disabled:cursor-not-allowed disabled:opacity-50'
             >
-              {isRegisterMode ? (regLoading ? '注册中...' : '注册') : (loading ? '登录中...' : '登录')}
+              {isRegisterMode ? (regLoading ? '注册中...' : '注册') : (loading ?'登录中...' : '登录')}
             </button>
 
             {/* 切换注册/登录 */}
-            {shouldAskUsername && (
+            {shouldAskUsername && isRegisterEnabled && (
               <div className='flex items-center justify-center'>
                 <button
                   type='button'

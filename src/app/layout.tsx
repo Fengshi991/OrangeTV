@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/*eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
@@ -8,7 +8,7 @@ import './globals.css';
 import { getConfig } from '@/lib/config';
 
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
-import { SiteProvider } from '../components/SiteProvider';
+import { SiteProvider }from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
 import { ToastProvider } from '../components/Toast';
 import GlobalThemeLoader from '../components/GlobalThemeLoader';
@@ -59,7 +59,7 @@ export default async function RootLayout({
   let requireDeviceCode = process.env.NEXT_PUBLIC_REQUIRE_DEVICE_CODE !== 'false';
   let customCategories = [] as {
     name: string;
-    type: 'movie' | 'tv';
+   type: 'movie' | 'tv';
     query: string;
   }[];
   if (storageType !== 'localstorage') {
@@ -94,9 +94,10 @@ export default async function RootLayout({
     CUSTOM_CATEGORIES: customCategories,
     FLUID_SEARCH: fluidSearch,
     REQUIRE_DEVICE_CODE: requireDeviceCode,
+   ENABLE_REGISTER: process.env.NEXT_PUBLIC_ENABLE_REGISTER !== 'false', // 添加注册开关配置
   };
 
-  return (
+return (
     <html lang='zh-CN' suppressHydrationWarning>
       <head>
         <meta
@@ -108,7 +109,7 @@ export default async function RootLayout({
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.RUNTIME_CONFIG = ${JSON.stringify(runtimeConfig)};`,
+            __html: `window.RUNTIME_CONFIG =${JSON.stringify(runtimeConfig)};`,
           }}
         />
 
@@ -119,7 +120,7 @@ export default async function RootLayout({
             __html: `
               (function() {
                 try {
-                  // 从localStorage立即获取缓存的主题配置
+                  //从localStorage立即获取缓存的主题配置
                   const cachedTheme = localStorage.getItem('theme-cache');
                   
                   if (cachedTheme) {
@@ -152,7 +153,7 @@ export default async function RootLayout({
                       console.log('缓存主题已应用:', themeConfig.defaultTheme);
                     } catch (parseError) {
                       console.warn('解析缓存主题配置失败:', parseError);
-                      localStorage.removeItem('theme-cache'); // 清除无效缓存
+localStorage.removeItem('theme-cache'); // 清除无效缓存
                     }
                   } else {
                     console.log('未找到缓存主题，等待API获取');
@@ -163,7 +164,7 @@ export default async function RootLayout({
               })();
             `,
           }}
-        />
+       />
 
       </head>
       <body
@@ -175,7 +176,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ToastProvider>
+<ToastProvider>
             <SiteProvider siteName={siteName} announcement={announcement}>
               <GlobalThemeLoader />
               {children}

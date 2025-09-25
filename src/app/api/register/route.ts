@@ -7,6 +7,12 @@ export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
+    // 检查是否启用注册功能
+    const ENABLE_REGISTER = process.env.NEXT_PUBLIC_ENABLE_REGISTER !== 'false';
+    if (!ENABLE_REGISTER) {
+      return NextResponse.json({ error: '注册功能已关闭' }, { status: 403 });
+    }
+
     const STORAGE_TYPE =
       (process.env.NEXT_PUBLIC_STORAGE_TYPE as
         | 'localstorage'
