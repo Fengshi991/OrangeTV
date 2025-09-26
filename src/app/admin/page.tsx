@@ -4179,7 +4179,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     setSiteSettings((prev) => ({
       ...prev,
       DoubanImageProxyType: value,
-    }));
+}));
   };
 
   // 保存站点配置
@@ -4188,7 +4188,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
       try {
         const resp = await fetch('/api/admin/site', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json'},
           body: JSON.stringify({ ...siteSettings }),
         });
 
@@ -4198,7 +4198,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         }
 
         showSuccess('保存成功, 请刷新页面', showAlert);
-        await refreshConfig();
+await refreshConfig();
       } catch (err) {
         showError(err instanceof Error ? err.message : '保存失败', showAlert);
         throw err;
@@ -4219,7 +4219,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
       {/* 站点名称 */}
       <div>
         <label
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300mb-2"
         >
           站点名称
         </label>
@@ -4231,7 +4231,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           }
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
-      </div>
+     </div>
 
       {/* 站点公告 */}
       <div>
@@ -4248,9 +4248,27 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
               Announcement: e.target.value,
             }))
           }
-          rows={3}
+          rows={6}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+         placeholder="支持 HTML、Vue、JavaScript 和 Element UI 代码。示例：
+<div>
+  <h2>站点公告</h2>
+  <el-button type='primary' @click='handleClick'>点击我</el-button>
+</div>
+<script>
+  new Vue({
+    el: '#app',
+methods: {
+      handleClick() {
+        this.$message('Hello from Vue!');
+      }
+    }
+  });
+</script>"
         />
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          支持 HTML、Vue、JavaScript 和 Element UI 代码，系统会自动进行沙箱隔离以防止 XSS 攻击
+        </p>
       </div>
 
       {/* 豆瓣数据源设置 */}
