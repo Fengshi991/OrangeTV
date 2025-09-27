@@ -1,8 +1,8 @@
-# 多架构构建 Dockerfile
+#多架构构建 Dockerfile
 # 使用 Docker Buildx 进行多架构构建：
 # docker buildx build --platform linux/amd64,linux/arm64 -t your-image:tag --push .
 # 或单一架构构建：
-# docker buildx build --platform linux/amd64 -t your-image:tag --load .
+# docker buildx build --platform linux/amd64 -tyour-image:tag --load .
 
 # 声明构建参数，用于多架构构建
 ARG BUILDPLATFORM
@@ -11,8 +11,8 @@ ARG TARGETPLATFORM
 # ---- 第 1 阶段：安装依赖 ----
 FROM --platform=$BUILDPLATFORM node:20-alpine AS deps
 
-# 启用 corepack 并激活 pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# 启用 corepack 并激活指定版本的 pnpm
+RUN corepack enable && corepack prepare pnpm@10.17.1 --activate
 
 WORKDIR /app
 
@@ -21,26 +21,26 @@ COPY . .
 
 # 然后检查文件
 RUN echo "文件列表:" && ls -la && \
-    echo "检查 tsconfig.json:" && \
+    echo "检查tsconfig.json:" && \
     if [ -f "tsconfig.json" ]; then \
         echo "tsconfig.json 存在"; \
     else \
         echo "tsconfig.json 不存在"; \
         echo "查找所有文件:"; \
-        find . -type f -name "*tsconfig*"; \
-        exit 1; \
+        find . -type f -name "*tsconfig*";\
+exit 1; \
     fi
 
 
 # 安装所有依赖
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --force
 
 # ---- 第 2 阶段：构建项目 ----
 FROM --platform=$BUILDPLATFORM node:20-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.17.1 --activate
 WORKDIR /app
 
-# 复制依赖
+#复制依赖
 COPY --from=deps /app/node_modules ./node_modules
 # 复制全部源代码
 COPY . .
@@ -50,7 +50,7 @@ ENV DOCKER_ENV=true
 # 生成生产构建
 RUN pnpm run build
 
-# ---- 第 3 阶段：生成运行时镜像 ----
+# ---- 第 3阶段：生成运行时镜像 ----
 FROM node:20-alpine AS runner
 
 # 创建非 root 用户
@@ -83,14 +83,15 @@ COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
 
 # 安装必要的WebSocket依赖（兼容多架构）
 USER root
-RUN corepack enable && corepack prepare pnpm@latest --activate && \
+RUN corepack enable && corepack prepare pnpm@10.17.1 --activate && \
     # 使用 --no-optional 避免某些架构下的可选依赖问题
     pnpm install --prod --no-optional ws && \
     # 清理安装缓存减小镜像大小
     pnpm store prune
 
 # 创建健康检查脚本（在切换用户之前以root权限创建）
-RUN echo '#!/usr/bin/env node\n\
+RUN mkdir -p /app && \
+    echo '#!/usr/bin/env node\n\
 const http = require("http");\n\
 const options = {\n\
   hostname: "localhost",\n\
