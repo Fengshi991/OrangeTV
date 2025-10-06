@@ -26,6 +26,7 @@ import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import { CURRENT_VERSION } from '@/lib/version';
 import { checkForUpdates, UpdateStatus } from '@/lib/version_check';
 
+import { UserSourceManager } from './UserSourceManager';
 import { VersionPanel } from './VersionPanel';
 import { useToast } from './Toast';
 
@@ -43,6 +44,7 @@ export const UserMenu: React.FC = () => {
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isVersionPanelOpen, setIsVersionPanelOpen] = useState(false);
   const [isChangeAvatarOpen, setIsChangeAvatarOpen] = useState(false);
+  const [isSourceManagerOpen, setIsSourceManagerOpen] = useState(false);
   const [authInfo, setAuthInfo] = useState<AuthInfo | null>(null);
   const [storageType, setStorageType] = useState<string>('localstorage');
   const [mounted, setMounted] = useState(false);
@@ -66,7 +68,7 @@ export const UserMenu: React.FC = () => {
 
   // Body 滚动锁定 - 使用 overflow 方式避免布局问题
   useEffect(() => {
-    if (isSettingsOpen || isChangePasswordOpen || isChangeAvatarOpen) {
+    if (isSettingsOpen || isChangePasswordOpen || isChangeAvatarOpen || isSourceManagerOpen) {
       const body = document.body;
       const html = document.documentElement;
 
@@ -85,7 +87,7 @@ export const UserMenu: React.FC = () => {
         html.style.overflow = originalHtmlOverflow;
       };
     }
-  }, [isSettingsOpen, isChangePasswordOpen]);
+  }, [isSettingsOpen, isChangePasswordOpen, isSourceManagerOpen]);
 
   // 设置相关状态
   const [defaultAggregateSearch, setDefaultAggregateSearch] = useState(true);
@@ -554,6 +556,16 @@ export const UserMenu: React.FC = () => {
     setIsSettingsOpen(false);
   };
 
+  const handleSourceManager = () => {
+    setIsOpen(false);
+    setIsSourceManagerOpen(true);
+  };
+
+  const handleCloseSourceManager = () => {
+    setIsSourceManagerOpen(false);
+  };
+
+
   // 设置相关的处理函数
   const handleAggregateToggle = (value: boolean) => {
     setDefaultAggregateSearch(value);
@@ -773,6 +785,15 @@ export const UserMenu: React.FC = () => {
           >
             <Camera className='w-4 h-4 text-gray-500 dark:text-gray-400' />
             <span className='font-medium'>修改头像</span>
+          </button>
+
+          {/* 视频源管理按钮 */}
+          <button
+            onClick={handleSourceManager}
+            className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm'
+          >
+            <Settings className='w-4 h-4 text-gray-500 dark:text-gray-400' />
+            <span className='font-medium'>视频源管理</span>
           </button>
 
           {/* 修改密码按钮 */}
@@ -1326,6 +1347,59 @@ export const UserMenu: React.FC = () => {
     </>
   );
 
+  // 视频源管理面板
+  const sourceManagerPanel = (
+    <>
+      {/* 背景遮罩 */}
+      <div
+        className='fixed inset-0 bg-black/50 backdrop-blur-sm z-[1000]'
+        onClick={handleCloseSourceManager}
+        onTouchMove={(e) => {
+          // 只阻止滚动，允许其他触摸事件
+          e.preventDefault();
+        }}
+        onWheel={(e) => {
+          // 阻止滚轮滚动
+          e.preventDefault();
+        }}
+        style={{
+          touchAction: 'none',
+        }}
+      />
+
+      {/* 视频源管理面板 */}
+      <div
+        className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-[1001] overflow-hidden flex flex-col'
+      >
+        {/* 标题栏 */}
+        <div className='flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700'>
+          <h3 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
+            视频源管理
+          </h3>
+          <button
+            onClick={handleCloseSourceManager}
+            className='w-8 h-8 p-1 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'
+            aria-label='Close'
+          >
+            <X className='w-full h-full' />
+          </button>
+        </div>
+
+        {/* 内容区域 */}
+        <div className='flex-1 overflow-y-auto p-6'>
+          <UserSourceManager />
+        </div>
+
+        {/* 底部说明 */}
+        <div className='p-4 border-t border-gray-200 dark:border-gray-700'>
+          <p className='text-xs text-gray-500 dark:text-gray-400 text-center'>
+            这些设置仅对您个人生效，不影响其他用户
+          </p>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <>
       <div className='relative'>
@@ -1363,6 +1437,11 @@ export const UserMenu: React.FC = () => {
       {isChangePasswordOpen &&
         mounted &&
         createPortal(changePasswordPanel, document.body)}
+
+      {/* 使用 Portal 将视频源管理面板渲染到 document.body */}
+      {isSourceManagerOpen &&
+        mounted &&
+        createPortal(sourceManagerPanel, document.body)}
 
       {/* 使用 Portal 将修改头像面板渲染到 document.body */}
       {isChangeAvatarOpen &&
