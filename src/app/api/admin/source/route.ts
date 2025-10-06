@@ -11,6 +11,31 @@ export const runtime = 'nodejs';
 // 支持的操作类型
 type Action = 'add' | 'disable' | 'enable' | 'delete' | 'edit' | 'sort' | 'batch_disable' | 'batch_enable' | 'batch_delete';
 
+export async function GET() {
+  try {
+    const adminConfig = await getConfig();
+    const sources = adminConfig.SourceConfig;
+    
+    return NextResponse.json(
+      { sources },
+      {
+        headers: {
+          'Cache-Control': 'no-store',
+        },
+      }
+    );
+  } catch (error) {
+    console.error('获取视频源列表失败:', error);
+    return NextResponse.json(
+      {
+        error: '获取视频源列表失败',
+        details: (error as Error).message,
+      },
+      { status: 500 }
+    );
+  }
+}
+
 interface BaseBody {
   action?: Action;
 }
